@@ -398,3 +398,19 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Blazor WebAssembly (wwwroot generado)
+**/wwwroot/dist/
+**/wwwroot/css/
+**/wwwroot/js/
+**/wwwroot/lib/
+
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.csproj.user
+*.dbmdl
+*.jfm
