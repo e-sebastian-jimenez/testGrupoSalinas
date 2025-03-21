@@ -1,0 +1,69 @@
+﻿@page "/"
+
+<PageTitle>Inicio</PageTitle>
+
+<div class="container">
+    <h1>Bienvenido a la Plataforma de Gestión Escolar</h1>
+    <p>Selecciona una opción para continuar:</p>
+
+    <div class="menu">
+        <a href="/cursos" class="btn">📚 Gestionar Cursos</a>
+        <a href="/alumnos" class="btn">🎓 Gestionar Alumnos</a>
+        <a href="/profesores" class="btn">👨‍🏫 Gestionar Profesores</a>
+    </div>
+
+    <div class="menu">
+        <a href="/inscripciones" class="btn">📝 Realizar Inscripciones</a>
+        <a href="/asignaciones" class="btn">📌 Asignar Profesores</a>
+        <a href="/consultas" class="btn">🔍 Consultas</a>
+    </div>
+</div>
+
+<style>
+    .container {
+        text-align: center;
+        margin-top: 50px;
+    }
+
+    h1 {
+        font-size: 2rem;
+        color: #333;
+    }
+
+    p {
+        font-size: 1.2rem;
+        color: #555;
+    }
+
+    .menu {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .btn {
+        background-color: #007bff;
+        color: white;
+        padding: 15px 25px;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: bold;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 200px;
+        height: 60px;
+    }
+
+        .btn:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+</style>

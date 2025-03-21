@@ -1,0 +1,171 @@
+﻿@page "/Alumnos"
+
+@using Frontend_Examen_Edgar_S_J_M.Domain;
+@using Frontend_Examen_Edgar_S_J_M.Services;
+
+@inject IAlumnoService AlumnoService
+
+<h2>👨‍🎓 Gestión de Alumnos</h2>
+
+<button @onclick="AbrirModalCrear" style="background-color: #82e0aa; color: black;">➕ Nuevo Alumno</button>
+
+@if (AlumnoList == null)
+{
+    <p>Cargando Alumnos...</p>
+}
+else
+{
+    <table class="tabla">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>FechaNacimiento</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var Alumno in AlumnoList)
+            {
+                <tr>
+                    <td>@Alumno.AlumnoID</td>
+                    <td>@Alumno.Nombre</td>
+                    <td>@Alumno.Apellido</td>
+                    <td>@Alumno.FechaNacimiento.ToString("dd-MM-yyyy")</td>
+                    <td>
+                        <button @onclick="() => EditarAlumno(Alumno)">✏️ Editar</button>
+                        <button @onclick="() => ConfirmarEliminar(Alumno.AlumnoID)">🗑️ Eliminar</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (MostrarModal)
+{
+    <div class="modal">
+        <div class="modal-content">
+            <h3>@(AlumnoSeleccionado.AlumnoID == 0 ? "Agregar Alumno" : "Editar Alumno")</h3>
+            <label>Nombre:</label>
+            <input type="text" @bind="AlumnoSeleccionado.Nombre" />
+
+            <label>Apellido:</label>
+            <input type="text" @bind="AlumnoSeleccionado.Apellido" />
+
+            <label>Fecha de nacimiento:</label>
+            <input type="date" @bind="AlumnoSeleccionado.FechaNacimiento" />
+
+            <button @onclick="GuardarAlumno">💾 Guardar</button>
+            <button @onclick="CerrarModal">❌ Cancelar</button>
+        </div>
+    </div>
+}
+
+@if (MostrarConfirmacion)
+{
+    <div class="modal">
+        <div class="modal-content">
+            <h3>¿Seguro que deseas eliminar este Alumno?</h3>
+            <button @onclick="EliminarAlumno">✔️ Sí</button>
+            <button @onclick="CerrarConfirmacion">❌ No</button>
+        </div>
+    </div>
+}
+
+@if (MensajeNotificacion != null)
+{
+    <div class="notificacion">@MensajeNotificacion</div>
+}
+
+@code {
+    private List<AlumnoDto>? AlumnoList;
+    private AlumnoDto AlumnoSeleccionado = new();
+    private bool MostrarModal = false;
+    private bool MostrarConfirmacion = false;
+    private int AlumnoIdEliminar = 0;
+    private string? MensajeNotificacion;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarAlumnos();
+    }
+
+    private async Task CargarAlumnos()
+    {
+        AlumnoList = await AlumnoService.GetAlumnosAsync();
+    }
+
+    private void AbrirModalCrear()
+    {
+        AlumnoSeleccionado = new AlumnoDto();
+        MostrarModal = true;
+    }
+
+    private void EditarAlumno(AlumnoDto Alumno)
+    {
+        AlumnoSeleccionado = new AlumnoDto { AlumnoID = Alumno.AlumnoID, Nombre = Alumno.Nombre, Apellido = Alumno.Apellido };
+        MostrarModal = true;
+    }
+
+    private async Task GuardarAlumno()
+    {
+        bool resultado;
+        if (AlumnoSeleccionado.AlumnoID == 0)
+        {
+            resultado = await AlumnoService.AddAlumnoAsync(AlumnoSeleccionado);
+        }
+        else
+        {
+            resultado = await AlumnoService.UpdateAlumnoAsync(AlumnoSeleccionado);
+        }
+
+        if (resultado)
+        {
+            MensajeNotificacion = "✅ Operación exitosa";
+            await CargarAlumnos();
+        }
+        else
+        {
+            MensajeNotificacion = "❌ Ocurrió un error";
+        }
+
+        MostrarModal = false;
+        StateHasChanged();
+    }
+
+    private void ConfirmarEliminar(int id)
+    {
+        AlumnoIdEliminar = id;
+        MostrarConfirmacion = true;
+    }
+
+    private async Task EliminarAlumno()
+    {
+        bool resultado = await AlumnoService.DeleteAlumnoAsync(AlumnoIdEliminar);
+        if (resultado)
+        {
+            MensajeNotificacion = "✅ Alumno eliminado";
+            await CargarAlumnos();
+        }
+        else
+        {
+            MensajeNotificacion = "❌ Ocurrió un error";
+        }
+
+        MostrarConfirmacion = false;
+        StateHasChanged();
+    }
+
+    private void CerrarModal()
+    {
+        MostrarModal = false;
+    }
+
+    private void CerrarConfirmacion()
+    {
+        MostrarConfirmacion = false;
+    }
+}
+

@@ -1,0 +1,83 @@
+﻿@page "/Asignaciones"
+@using Frontend_Examen_Edgar_S_J_M.Domain;
+@using Frontend_Examen_Edgar_S_J_M.Services;
+
+@inject IAsignacionService AsignacionService
+
+<h3>📚 Asignar Profesor a Curso</h3>
+
+<div class="asignacion-container">
+    <label>Selecciona un Profesor:</label>
+    <select @bind="ProfesorSeleccionadoID">
+        <option value="0" disabled>-- Selecciona un Profesor --</option>
+        @if (Profesores != null && Profesores.Any())
+        {
+            @foreach (var profesor in Profesores)
+            {
+                <option value="@profesor.ProfesorID">@profesor.Nombre @profesor.Apellido</option>
+            }
+        }
+    </select>
+
+    <label>Selecciona un Curso:</label>
+    <select @bind="CursoSeleccionadoID">
+        <option value="0" disabled>-- Selecciona un Curso --</option>
+        @if (Cursos != null && Cursos.Any())
+        {
+            @foreach (var curso in Cursos)
+            {
+                <option value="@curso.CursoID">@curso.Nombre</option>
+            }
+        }
+
+    </select>
+
+    <button @onclick="AsignarProfesor" style="background-color: #82e0aa; color: black;">📌 Asignar</button>
+</div>
+
+@if (MensajeNotificacion != null)
+{
+    <div class="notificacion">@MensajeNotificacion</div>
+}
+
+@code {
+    private List<ProfesorDto>? Profesores;
+    private List<CursoDto>? Cursos;
+    private int ProfesorSeleccionadoID = 0;
+    private int CursoSeleccionadoID = 0;
+    private string? MensajeNotificacion;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDropDown();
+    }
+
+    private async Task CargarDropDown()
+    {
+        Cursos = await AsignacionService.GetCursosAsync();
+        Profesores = await AsignacionService.GetProfesoresAsync();
+    }
+
+    private async Task AsignarProfesor()
+    {
+        bool resultado;
+        if (ProfesorSeleccionadoID == 0 || CursoSeleccionadoID == 0)
+        {
+            MensajeNotificacion = "Debes seleccionar un profesor y un curso.";
+            return;
+        }
+
+        resultado = await AsignacionService.AsignarProfesorAsync(new() { CursoID = CursoSeleccionadoID, ProfesorID = ProfesorSeleccionadoID });
+
+        if (resultado)
+        {
+            MensajeNotificacion = "✅ Profesor asignado con éxito.";
+        }
+        else
+        {
+            MensajeNotificacion = "❌ Error al asignar el profesor.";
+        }
+    }
+}
+
+

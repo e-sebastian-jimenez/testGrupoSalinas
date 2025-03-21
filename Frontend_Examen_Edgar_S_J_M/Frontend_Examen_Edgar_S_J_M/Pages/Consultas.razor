@@ -1,0 +1,183 @@
+﻿@page "/consultas"
+@using Frontend_Examen_Edgar_S_J_M.Domain;
+@using Frontend_Examen_Edgar_S_J_M.Services;
+
+@inject IQueryService QueryService
+
+<h3>🧐 Consultar Alumnos por Curso</h3>
+
+<select @bind="FiltroSeleccionado">
+    <option value="0">-- Selecciona un Filtro --</option>
+    <option value="1">Obtener Alumnos por Curso</option>
+    <option value="2">Obtener Cursos por Profesor</option>
+</select>
+
+<br />
+<br />
+
+@if (FiltroSeleccionado == 1)
+{
+    <div class="consulta-container">
+        <label for="curso">Selecciona un Curso:</label>
+        <select @bind="CursoSeleccionadoID">
+            <option value="0">-- Selecciona un curso --</option>
+            @if (Cursos != null && Cursos.Any())
+            {
+                @foreach (var curso in Cursos)
+                {
+                    <option value="@curso.CursoID">@curso.Nombre @curso.Codigo</option>
+                }
+            }
+        </select>
+
+        <button class="consultar-btn" @onclick="ConsultarAlumnos" style="background-color: #f8c471; color: black;">🔍 Consultar</button>
+    </div>
+    <br />
+
+    @if (AlumnosPorCurso != null && AlumnosPorCurso.Count > 0)
+    {
+        <h4>Profesor Asignado: @Profesor.NombreProfesor @Profesor.ApellidoProfesor</h4>
+
+        <table class="tabla">
+            <thead>
+                <tr>
+                    <th>ID Alumno</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var alumno in AlumnosPorCurso)
+                {
+                    <tr>
+                        <td>@alumno.AlumnoID</td>
+                        <td>@alumno.NombreAlumno</td>
+                        <td>@alumno.ApellidoAlumno</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (MensajeError != null)
+    {
+        <div class="error">@MensajeError</div>
+    }
+}
+@if (FiltroSeleccionado == 2)
+{
+    <div class="consulta-container">
+        <label for="profesor">Selecciona un Profesor:</label>
+        <select @bind="ProfesorSeleccionadoID">
+            <option value="0">-- Selecciona un profesor --</option>
+            @if (Profesores != null && Profesores.Any())
+            {
+                @foreach (var profesor in Profesores)
+                {
+                    <option value="@profesor.ProfesorID">@profesor.Nombre @profesor.Apellido</option>
+                }
+            }
+        </select>
+
+        <button class="consultar-btn" @onclick="ConsultarCursos" style="background-color: #f8c471; color: black;">🔍 Consultar</button>
+    </div>
+    <br />
+
+    @if (CursosPorProfesor != null && CursosPorProfesor.Count > 0)
+    {
+        var cursosAgrupados = CursosPorProfesor.GroupBy(c => new { c.CursoID, c.NombreCurso });
+
+        @foreach (var grupo in cursosAgrupados)
+        {
+            <h5>Curso: @grupo.Key.NombreCurso</h5>
+
+            <table class="tabla">
+                <thead>
+                    <tr>
+                        <th>ID Alumno</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var alumno in grupo)
+                    {
+                        <tr>
+                            <td>@alumno.AlumnoID</td>
+                            <td>@alumno.NombreAlumno</td>
+                            <td>@alumno.ApellidoAlumno</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+
+
+    @if (MensajeError != null)
+    {
+        <div class="error">@MensajeError</div>
+    }
+}
+
+
+@code {
+    private List<AlumnoPorCursoDto>? AlumnosPorCurso = new();
+    private List<CursoPorProfesorDto>? CursosPorProfesor = new();
+    private List<CursoDto>? Cursos = new();
+    private List<ProfesorDto>? Profesores = new();
+    private AlumnoPorCursoDto Profesor = new();
+    private int CursoSeleccionadoID = 0;
+    private int ProfesorSeleccionadoID = 0;
+    private int FiltroSeleccionado = 0;
+    private string? MensajeError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDropDown();
+    }
+
+    private async Task CargarDropDown()
+    {
+        Cursos = await QueryService.GetCursosAsync();
+        Profesores = await QueryService.GetProfesoresAsync();
+    }
+
+    private async Task ConsultarAlumnos()
+    {
+        if (CursoSeleccionadoID == 0)
+        {
+            MensajeError = "Por favor, selecciona un curso.";
+            return;
+        }
+
+        MensajeError = null;
+        AlumnosPorCurso = await QueryService.GetAlumnosByCursoId(CursoSeleccionadoID);
+
+        if (AlumnosPorCurso != null && AlumnosPorCurso.Count > 0)
+        {
+            Profesor = AlumnosPorCurso.First();
+        }
+        else
+        {
+            MensajeError = "No hay alumnos inscritos en este curso.";
+        }
+    }
+    private async Task ConsultarCursos()
+    {
+        if (ProfesorSeleccionadoID == 0)
+        {
+            MensajeError = "Por favor, selecciona un profesor.";
+            return;
+        }
+
+        MensajeError = null;
+        CursosPorProfesor = await QueryService.GetCursosByProfesorId(ProfesorSeleccionadoID);
+
+        if (CursosPorProfesor == null || CursosPorProfesor.Count == 0)
+        {
+            MensajeError = "No hay alumnos inscritos en este curso.";
+        }
+    }
+}
+

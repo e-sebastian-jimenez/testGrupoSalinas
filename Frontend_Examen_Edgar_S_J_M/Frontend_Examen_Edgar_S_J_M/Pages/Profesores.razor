@@ -1,0 +1,165 @@
+﻿@page "/Profesores"
+@using Frontend_Examen_Edgar_S_J_M.Domain;
+@using Frontend_Examen_Edgar_S_J_M.Services;
+
+@inject IProfesorService ProfesorService
+
+<h2>👨‍🏫 Gestión de Profesores</h2>
+
+<button @onclick="AbrirModalCrear" style="background-color: #82e0aa; color: black;">➕ Nuevo Profesor</button>
+
+@if (Profesors == null)
+{
+    <p>Cargando profesores...</p>
+}
+else
+{
+    <table class="tabla">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var profesor in Profesors)
+            {
+                <tr>
+                    <td>@profesor.ProfesorID</td>
+                    <td>@profesor.Nombre</td>
+                    <td>@profesor.Apellido</td>
+                    <td>
+                        <button @onclick="() => EditarProfesor(profesor)">✏️ Editar</button>
+                        <button @onclick="() => ConfirmarEliminar(profesor.ProfesorID)">🗑️ Eliminar</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (MostrarModal)
+{
+    <div class="modal">
+        <div class="modal-content">
+            <h3>@(ProfesorSeleccionado.ProfesorID == 0 ? "Agregar Profesor" : "Editar Profesor")</h3>
+            <label>Nombre:</label>
+            <input type="text" @bind="ProfesorSeleccionado.Nombre" />
+
+            <label>Apellido:</label>
+            <input type="text" @bind="ProfesorSeleccionado.Apellido" />
+
+            <button @onclick="GuardarProfesor">💾 Guardar</button>
+            <button @onclick="CerrarModal">❌ Cancelar</button>
+        </div>
+    </div>
+}
+
+@if (MostrarConfirmacion)
+{
+    <div class="modal">
+        <div class="modal-content">
+            <h3>¿Seguro que deseas eliminar este profesor?</h3>
+            <button @onclick="EliminarProfesor">✔️ Sí</button>
+            <button @onclick="CerrarConfirmacion">❌ No</button>
+        </div>
+    </div>
+}
+
+@if (MensajeNotificacion != null)
+{
+    <div class="notificacion">@MensajeNotificacion</div>
+}
+
+@code {
+    private List<ProfesorDto>? Profesors;
+    private ProfesorDto ProfesorSeleccionado = new();
+    private bool MostrarModal = false;
+    private bool MostrarConfirmacion = false;
+    private int ProfesorIdEliminar = 0;
+    private string? MensajeNotificacion;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarProfesores();
+    }
+
+    private async Task CargarProfesores()
+    {
+        Profesors = await ProfesorService.GetProfesoresAsync();
+    }
+
+    private void AbrirModalCrear()
+    {
+        ProfesorSeleccionado = new ProfesorDto();
+        MostrarModal = true;
+    }
+
+    private void EditarProfesor(ProfesorDto profesor)
+    {
+        ProfesorSeleccionado = new ProfesorDto { ProfesorID = profesor.ProfesorID, Nombre = profesor.Nombre, Apellido = profesor.Apellido };
+        MostrarModal = true;
+    }
+
+    private async Task GuardarProfesor()
+    {
+        bool resultado;
+        if (ProfesorSeleccionado.ProfesorID == 0)
+        {
+            resultado = await ProfesorService.AddProfesorAsync(ProfesorSeleccionado);
+        }
+        else
+        {
+            resultado = await ProfesorService.UpdateProfesorAsync(ProfesorSeleccionado);
+        }
+
+        if (resultado)
+        {
+            MensajeNotificacion = "✅ Operación exitosa";
+            await CargarProfesores();
+        }
+        else
+        {
+            MensajeNotificacion = "❌ Ocurrió un error";
+        }
+
+        MostrarModal = false;
+        StateHasChanged();
+    }
+
+    private void ConfirmarEliminar(int id)
+    {
+        ProfesorIdEliminar = id;
+        MostrarConfirmacion = true;
+    }
+
+    private async Task EliminarProfesor()
+    {
+        bool resultado = await ProfesorService.DeleteProfesorAsync(ProfesorIdEliminar);
+        if (resultado)
+        {
+            MensajeNotificacion = "✅ Profesor eliminado";
+            await CargarProfesores();
+        }
+        else
+        {
+            MensajeNotificacion = "❌ Ocurrió un error";
+        }
+
+        MostrarConfirmacion = false;
+        StateHasChanged();
+    }
+
+    private void CerrarModal()
+    {
+        MostrarModal = false;
+    }
+
+    private void CerrarConfirmacion()
+    {
+        MostrarConfirmacion = false;
+    }
+}
+

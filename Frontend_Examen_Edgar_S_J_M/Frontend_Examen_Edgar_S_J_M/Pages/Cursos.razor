@@ -1,0 +1,170 @@
+﻿@page "/Cursos"
+@using Frontend_Examen_Edgar_S_J_M.Domain;
+@using Frontend_Examen_Edgar_S_J_M.Services;
+
+@inject ICursoService CursoService
+
+<h2>🏫 Gestión de Cursos</h2>
+
+<button @onclick="AbrirModalCrear" style="background-color: #82e0aa; color: black;">➕ Nuevo Curso</button>
+
+@if (CursoList == null)
+{
+    <p>Cargando Cursos...</p>
+}
+else
+{
+    <table class="tabla">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Nombre</th>
+                <th>Descripcion</th>
+                <th>Codigo</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var Curso in CursoList)
+            {
+                <tr>
+                    <td>@Curso.CursoID</td>
+                    <td>@Curso.Nombre</td>
+                    <td>@Curso.Descripcion</td>
+                    <td>@Curso.Codigo</td>
+                    <td>
+                        <button @onclick="() => EditarCurso(Curso)">✏️ Editar</button>
+                        <button @onclick="() => ConfirmarEliminar(Curso.CursoID)">🗑️ Eliminar</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (MostrarModal)
+{
+    <div class="modal">
+        <div class="modal-content">
+            <h3>@(CursoSeleccionado.CursoID == 0 ? "Agregar Curso" : "Editar Curso")</h3>
+            <label>Nombre:</label>
+            <input type="text" @bind="CursoSeleccionado.Nombre" />
+
+            <label>Descripcion:</label>
+            <input type="text" @bind="CursoSeleccionado.Descripcion" />
+
+            <label>Codigo:</label>
+            <input type="text" @bind="CursoSeleccionado.Codigo" />
+
+            <button @onclick="GuardarCurso">💾 Guardar</button>
+            <button @onclick="CerrarModal">❌ Cancelar</button>
+        </div>
+    </div>
+}
+
+@if (MostrarConfirmacion)
+{
+    <div class="modal">
+        <div class="modal-content">
+            <h3>¿Seguro que deseas eliminar este Curso?</h3>
+            <button @onclick="EliminarCurso">✔️ Sí</button>
+            <button @onclick="CerrarConfirmacion">❌ No</button>
+        </div>
+    </div>
+}
+
+@if (MensajeNotificacion != null)
+{
+    <div class="notificacion">@MensajeNotificacion</div>
+}
+
+@code {
+    private List<CursoDto>? CursoList;
+    private CursoDto CursoSeleccionado = new();
+    private bool MostrarModal = false;
+    private bool MostrarConfirmacion = false;
+    private int CursoIdEliminar = 0;
+    private string? MensajeNotificacion;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarCursos();
+    }
+
+    private async Task CargarCursos()
+    {
+        CursoList = await CursoService.GetCursos();
+    }
+
+    private void AbrirModalCrear()
+    {
+        CursoSeleccionado = new CursoDto();
+        MostrarModal = true;
+    }
+
+    private void EditarCurso(CursoDto Curso)
+    {
+        CursoSeleccionado = new CursoDto { CursoID = Curso.CursoID, Nombre = Curso.Nombre, Descripcion = Curso.Descripcion, Codigo = Curso.Codigo };
+        MostrarModal = true;
+    }
+
+    private async Task GuardarCurso()
+    {
+        bool resultado;
+        if (CursoSeleccionado.CursoID == 0)
+        {
+            resultado = await CursoService.AddCurso(CursoSeleccionado);
+        }
+        else
+        {
+            resultado = await CursoService.UpdateCurso(CursoSeleccionado);
+        }
+
+        if (resultado)
+        {
+            MensajeNotificacion = "✅ Operación exitosa";
+            await CargarCursos();
+        }
+        else
+        {
+            MensajeNotificacion = "❌ Ocurrió un error";
+        }
+
+        MostrarModal = false;
+        StateHasChanged();
+    }
+
+    private void ConfirmarEliminar(int id)
+    {
+        CursoIdEliminar = id;
+        MostrarConfirmacion = true;
+    }
+
+    private async Task EliminarCurso()
+    {
+        bool resultado = await CursoService.DeleteCurso(CursoIdEliminar);
+        if (resultado)
+        {
+            MensajeNotificacion = "✅ Curso eliminado";
+            await CargarCursos();
+        }
+        else
+        {
+            MensajeNotificacion = "❌ Ocurrió un error";
+        }
+
+        MostrarConfirmacion = false;
+        StateHasChanged();
+    }
+
+    private void CerrarModal()
+    {
+        MostrarModal = false;
+    }
+
+    private void CerrarConfirmacion()
+    {
+        MostrarConfirmacion = false;
+    }
+}
+
